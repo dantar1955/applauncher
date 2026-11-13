@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Launch Hub</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root { --bg:#0f1420; --panel:#161d2e; --panel2:#1d2538; --line:#2a3350; --text:#e7ebf5; --muted:#8a93ab; --accent:#5b8cff; --accent2:#3f6fe0; --danger:#e5566b; --ok:#38c17a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #root { min-height: 100vh; }
+  button { font: inherit; cursor: pointer; }
+  input { font: inherit; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 20px 64px; }
+  .center-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 28px; }
+  .login-card { width: 100%; max-width: 380px; }
+  .brand { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .stack { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
+  input[type=text], input[type=email], input[type=password], input[type=url], textarea, select {
+    background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 14px; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  .btn { background: var(--panel2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px 16px; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn.ghost { background: transparent; }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .btn.danger { color: var(--danger); border-color: rgba(229,86,107,0.4); }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  .btn[style*="width:100%"] { justify-content: center; }
+  .err { background: rgba(229,86,107,0.12); border: 1px solid rgba(229,86,107,0.4); color: #f3a6b0; padding: 10px 12px; border-radius: 8px; font-size: 13px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  header.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
+  nav.tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  nav.tabs button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 7px 16px; font-size: 13px; }
+  nav.tabs button.active { background: var(--panel2); color: var(--text); border-color: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--text); transition: border-color .15s, transform .15s; }
+  .tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tile .icon { font-size: 30px; }
+  .tile .name { font-weight: 600; font-size: 16px; }
+  .tile .desc { color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr.dim { opacity: .5; }
+  .role { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel2); }
+  .role-admin { color: #ffd166; }
+  .status { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+  .status-active { background: rgba(56,193,122,0.15); color: var(--ok); }
+  .status-invited { background: rgba(91,140,255,0.15); color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font-size: 11px; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+  .modal-back { position: fixed; inset: 0; background: rgba(5,8,15,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; width: 100%; max-width: 440px; max-height: 90vh; overflow: auto; }
+  .modal h2 { margin-top: 0; font-size: 17px; }
+  .appgrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .appgrid label { flex-direction: row; align-items: center; gap: 6px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; color: var(--text); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--line); padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 60; }
+  .row-actions { display: flex; gap: 8px; }
+  .actions-col { white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* =====================================================================
+   SUPABASE CONFIG — fill these in from your new, empty Supabase project
+   (Project Settings -> API). These two values are public by design,
+   protected by Row-Level Security.
+   ===================================================================== */
+const SUPABASE_URL = "https://uwvhkwpiflyzoeaknytd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3dmhrd3BpZmx5em9lYWtueXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1Mzk4MjEsImV4cCI6MjExMDExNTgyMX0.Hq1llUr9gScuEToE4rGu-PVTCSengkrwWCUQySJsrT4";
+const CONFIGURED = !SUPABASE_URL.startsWith("YOUR_") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
+const sb = CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+async function call(action, payload = {}) {
+  const { data: { session } } = CONFIGURED ? await sb.auth.getSession() : { data: { session: null } };
+  const res = await fetch("/.netlify/functions/admin-api", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(session ? { authorization: `Bearer ${session.access_token}` } : {}) },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  return body;
+}
+
+function NotConfigured() {
+  return (
+    <div className="center-wrap">
+      <div className="card login-card">
+        <div className="brand"><span className="dot" /> Launch Hub</div>
+        <p className="muted small" style={{ marginTop: 16 }}>
+          This copy isn't connected to a database yet. Open <code>index.html</code>, find{" "}
+          <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> near the top of the script, and paste in
+          the values from your Supabase project's Settage &rarr; API page. Then run <code>supabase-schema.sql</code>{" "}
+          once in that project's SQL Editor.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ text }) { return text ? <div className="toast" role="status">{text}</div> : null; }
+
+/* =====================================================================
+   Auth screens
+   ===================================================================== */
+function LoginScreen({ onNeedsBootstrap }) {
+  const [mode, setMode] = useState("checking"); // checking | login | bootstrap | sent
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    call("status").then((r) => setMode(r.needs_bootstrap ? "bootstrap" : "login")).catch(() => setMode("login"));
+  }, []);
+
+  async function submitLogin(e) {
+    e.preventDefault();
+    setErr(""); setBusy(true);
+    const f = e.target;
+    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    setBusy(false);
+    if (error) setErr(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
+  }
+
+  async function forgot(e) {
+    e.preventDefault();
+    const email = prompt("Type your email to get a password reset link:");
+    if (!email) return;
+    try { await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: location.origin + "/" }); } catch {}
+    alert("If that email has an account, a reset link is on its way.");
+  }
+
+  async function submitBootstrap(e) {
+    e.preventDefault();
+    setErr(""); setBusy(true);
+    const f = e.target;
+    try {
+      await call("bootstrap", { email: f.email.value.trim(), display_name: f.name.value.trim() });
+      setMode("sent");
+    } catch (e2) { setErr(e2.message); }
+    setBusy(false);
+  }
+
+  if (mode === "checking") return <div className="center-wrap" />;
+
+  if (mode === "sent") {
+    return (
+      <div className="center-wrap">
+        <div className="card login-card">
+          <div className="brand"><span className="dot" /> Launch Hub</div>
+          <p style={{ marginTop: 16 }}>Check your email for a link to set your password and sign in.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "bootstrap") {
+    return (
+      <div className="center-wrap">
+        <div className="card login-card">
+          <div className="brand"><span className="dot" /> Launch Hub</div>
+          <p className="muted small" style={{ marginTop: 10 }}>Nobody has set this up yet. Enter the administrator email that was authorized when this hub was deployed.</p>
+          {err && <div className="err" style={{ marginTop: 12 }}>{err}</div>}
+          <form className="stack" onSubmit={submitBootstrap}>
+            <label>Your name<input type="text" name="name" required /></label>
+            <label>Administrator email<input type="email" name="email" required /></label>
+            <button className="btn primary" style={{ width: "100%" }} disabled={busy}>{busy ? "Sending…" : "Send me a sign-in link"}</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="center-wrap">
+      <div className="card login-card">
+        <div className="brand"><span className="dot" /> Launch Hub</div>
+        <p className="muted small" style={{ marginTop: 10 }}>One sign-in for all your apps.</p>
+        {err && <div className="err" style={{ marginTop: 12 }}>{err}</div>}
+        <form className="stack" onSubmit={submitLogin}>
+          <label>Email<input type="email" name="email" autoComplete="username" required autoFocus /></label>
+          <label>Password<input type="password" name="password" autoComplete="current-password" required /></label>
+          <button className="btn primary" style={{ width: "100%" }} disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
+          <a href="#" onClick={forgot} className="small" style={{ textAlign: "center" }}>Forgot password?</a>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SetPasswordScreen({ onDone }) {
+  const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setBusy(true);
+    const { error } = await sb.auth.updateUser({ password: e.target.pw.value });
+    setBusy(false);
+    if (error) return setErr(error.message);
+    onDone();
+  }
+  return (
+    <div className="center-wrap">
+      <div className="card login-card">
+        <div className="brand"><span className="dot" /> Launch Hub</div>
+        <h2 style={{ fontSize: 16 }}>Choose a password</h2>
+        {err && <div className="err">{err}</div>}
+        <form className="stack" onSubmit={submit}>
+          <label>New password (10+ characters)<input type="password" name="pw" minLength={10} required /></label>
+          <button className="btn primary" style={{ width: "100%" }} disabled={busy}>{busy ? "Saving…" : "Save & continue"}</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   Signed-in shell
+   ===================================================================== */
+function TopBar({ me, onLogout }) {
+  return (
+    <header className="top wrap" style={{ maxWidth: 1040, margin: "0 auto" }}>
+      <div className="brand"><span className="dot" /> Launch Hub</div>
+      <div className="row-actions">
+        <span className="muted small" style={{ alignSelf: "center" }}>{me.display_name || me.email}</span>
+        <button className="btn small" onClick={onLogout}>Sign out</button>
+      </div>
+    </header>
+  );
+}
+
+function Dashboard({ apps }) {
+  if (!apps.length) {
+    return <div className="card muted">You don't have access to any apps yet. Ask your administrator to grant you access under Manage.</div>;
+  }
+  return (
+    <div className="tiles">
+      {apps.map((a) => (
+        <a key={a.key} className="tile" href={a.url} target="_blank" rel="noopener">
+          <div className="icon">{a.icon || "🔗"}</div>
+          <div className="name">{a.name}</div>
+          {a.description && <div className="desc">{a.description}</div>}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/* =====================================================================
+   Admin: Apps tab
+   ===================================================================== */
+function AppsAdmin({ flash }) {
+  const [apps, setApps] = useState(null);
+  const [editing, setEditing] = useState(null); // {} for new, or an app row
+  const load = useCallback(() => call("list_apps").then((r) => setApps(r.apps)).catch((e) => flash(e.message, true)), [flash]);
+  useEffect(() => { load(); }, [load]);
+
+  async function save(e) {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      await call("save_app", {
+        key: editing.key || f.key.value, name: f.name.value, url: f.url.value,
+        description: f.description.value, icon: f.icon.value, sort: Number(f.sort.value) || 0,
+      });
+      setEditing(null); load(); flash("Saved.");
+    } catch (err) { flash(err.message, true); }
+  }
+  async function remove(a) {
+    if (!confirm(`Remove "${a.name}" from the hub? This doesn't affect the app itself, only its tile here.`)) return;
+    try { await call("delete_app", { key: a.key }); load(); flash("Removed."); } catch (err) { flash(err.message, true); }
+  }
+
+  if (!apps) return <p className="muted">Loading…</p>;
+  return (
+    <div>
+      <div className="row-actions" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
+        <button className="btn primary small" onClick={() => setEditing({ key: "", name: "", url: "", description: "", icon: "", sort: apps.length })}>Add app</button>
+      </div>
+      <table>
+        <thead><tr><th>Icon</th><th>Name</th><th>URL</th><th /></tr></thead>
+        <tbody>
+          {apps.map((a) => (
+            <tr key={a.key}>
+              <td style={{ fontSize: 20 }}>{a.icon || "🔗"}</td>
+              <td>{a.name}<div className="small muted">{a.description}</div></td>
+              <td><a href={a.url} target="_blank" rel="noopener" className="small">{a.url}</a></td>
+              <td className="actions-col row-actions">
+                <button className="btn small" onClick={() => setEditing(a)}>Edit</button>
+                <button className="btn small danger" onClick={() => remove(a)}>Remove</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {editing && (
+        <div className="modal-back" onMouseDown={() => setEditing(null)}>
+          <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+            <h2>{editing.key ? "Edit app" : "Add app"}</h2>
+            <form className="stack" onSubmit={save}>
+              {!editing.key && <label>Key (short, no spaces)<input name="key" defaultValue={editing.key} placeholder="e.g. family_office" required /></label>}
+              <label>Name<input name="name" defaultValue={editing.name} required /></label>
+              <label>URL<input name="url" type="url" defaultValue={editing.url} placeholder="https://your-app.netlify.app" required /></label>
+              <label>Description<input name="description" defaultValue={editing.description} /></label>
+              <label>Icon (an emoji is simplest)<input name="icon" defaultValue={editing.icon} placeholder="🏦" /></label>
+              <label>Sort order<input name="sort" type="text" inputMode="numeric" defaultValue={editing.sort ?? 0} /></label>
+              <div className="row-actions" style={{ justifyContent: "flex-end" }}>
+                <button type="button" className="btn" onClick={() => setEditing(null)}>Cancel</button>
+                <button className="btn primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =====================================================================
+   Admin: People tab
+   ===================================================================== */
+function PeopleAdmin({ me, flash }) {
+  const [members, setMembers] = useState(null);
+  const [apps, setApps] = useState([]);
+  const [dialog, setDialog] = useState(null); // {kind:'invite'} | {kind:'edit', member}
+
+  const load = useCallback(() => {
+    Promise.all([call("list_members"), call("list_apps")])
+      .then(([m, a]) => { setMembers(m.members); setApps(a.apps); })
+      .catch((e) => flash(e.message, true));
+  }, [flash]);
+  useEffect(() => { load(); }, [load]);
+
+  async function run(action, payload) {
+    try { await call(action, payload); load(); } catch (e) { flash(e.message, true); throw e; }
+  }
+
+  if (!members) return <p className="muted">Loading…</p>;
+
+  return (
+    <div>
+      <div className="row-actions" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
+        <button className="btn primary small" onClick={() => setDialog({ kind: "invite" })}>Invite person</button>
+      </div>
+      <table>
+        <thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Apps</th><th /></tr></thead>
+        <tbody>
+          {members.map((m) => (
+            <tr key={m.user_id} className={m.is_disabled ? "dim" : ""}>
+              <td>{m.display_name || m.email}{m.user_id === me.user_id && <span className="small muted"> (you)</span>}<div className="small muted">{m.email}</div></td>
+              <td><span className={`role ${m.role === "admin" ? "role-admin" : ""}`}>{m.role === "admin" ? "Admin" : "User"}</span></td>
+              <td><span className={`status status-${m.is_disabled ? "invited" : m.status}`}>{m.is_disabled ? "Disabled" : m.status === "active" ? "Active" : "Invited"}</span></td>
+              <td><div className="chips">{m.apps.length ? m.apps.map((k) => <span key={k} className="chip">{apps.find((a) => a.key === k)?.name || k}</span>) : <span className="small muted">None</span>}</div></td>
+              <td className="actions-col row-actions">
+                <button className="btn small" onClick={() => setDialog({ kind: "edit", member: m })}>Edit</button>
+                {m.status === "invited" && <button className="btn small" onClick={() => run("resend_invite", { user_id: m.user_id }).then(() => flash("Invitation re-sent."))}>Resend</button>}
+                {m.user_id !== me.user_id && (
+                  <button className="btn small" onClick={() => run("update", { user_id: m.user_id, is_disabled: !m.is_disabled }).then(() => flash(m.is_disabled ? "Re-enabled." : "Disabled."))}>
+                    {m.is_disabled ? "Enable" : "Disable"}
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {dialog?.kind === "invite" && (
+        <MemberForm apps={apps} onClose={() => setDialog(null)} onSave={async (v) => {
+          await run("invite", v); setDialog(null); flash(`Invitation sent to ${v.email}.`);
+        }} />
+      )}
+      {dialog?.kind === "edit" && (
+        <MemberForm apps={apps} member={dialog.member} isSelf={dialog.member.user_id === me.user_id} onClose={() => setDialog(null)} onSave={async (v) => {
+          await run("update", { user_id: dialog.member.user_id, ...v }); setDialog(null); flash("Saved.");
+        }} onReset={() => run("send_reset", { user_id: dialog.member.user_id }).then(() => flash("Password reset email sent."))}
+          onDelete={() => { if (confirm(`Delete ${dialog.member.display_name || dialog.member.email}? This can't be undone.`)) run("delete", { user_id: dialog.member.user_id }).then(() => { setDialog(null); flash("Deleted."); }); }} />
+      )}
+    </div>
+  );
+}
+
+function MemberForm({ member, apps, isSelf, onClose, onSave, onReset, onDelete }) {
+  const [sel, setSel] = useState(new Set(member?.apps ?? []));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  async function submit(e) {
+    e.preventDefault(); setErr(""); setBusy(true);
+    const f = e.target;
+    const v = { display_name: f.display_name.value.trim(), apps: [...sel] };
+    if (!member) v.email = f.email.value.trim();
+    if (f.role) v.role = f.role.value;
+    try { await onSave(v); } catch (e2) { setErr(e2.message); } finally { setBusy(false); }
+  }
+  function toggle(key) { setSel((s) => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n; }); }
+  return (
+    <div className="modal-back" onMouseDown={onClose}>
+      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+        <h2>{member ? "Edit person" : "Invite person"}</h2>
+        {err && <div className="err">{err}</div>}
+        <form className="stack" onSubmit={submit}>
+          {!member && <label>Email<input type="email" name="email" required /></label>}
+          <label>Name<input type="text" name="display_name" defaultValue={member?.display_name || ""} /></label>
+          {!isSelf && (
+            <label>Role
+              <select name="role" defaultValue={member?.role || "user"}>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+          )}
+          <label>Apps they can launch</label>
+          <div className="appgrid">
+            {apps.map((a) => (
+              <label key={a.key}><input type="checkbox" checked={sel.has(a.key)} onChange={() => toggle(a.key)} /> {a.icon} {a.name}</label>
+            ))}
+          </div>
+          <div className="row-actions" style={{ justifyContent: "space-between", marginTop: 8 }}>
+            <div className="row-actions">
+              {member && <button type="button" className="btn small" onClick={onReset}>Send password reset</button>}
+              {member && !isSelf && <button type="button" className="btn small danger" onClick={onDelete}>Delete</button>}
+            </div>
+            <div className="row-actions">
+              <button type="button" className="btn" onClick={onClose}>Cancel</button>
+              <button className="btn primary" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function Manage({ me, flash }) {
+  const [tab, setTab] = useState("people");
+  return (
+    <div>
+      <nav className="tabs">
+        <button className={tab === "people" ? "active" : ""} onClick={() => setTab("people")}>People</button>
+        <button className={tab === "apps" ? "active" : ""} onClick={() => setTab("apps")}>Apps</button>
+      </nav>
+      {tab === "people" ? <PeopleAdmin me={me} flash={flash} /> : <AppsAdmin flash={flash} />}
+    </div>
+  );
+}
+
+/* =====================================================================
+   Root
+   ===================================================================== */
+function App() {
+  const [session, setSession] = useState(undefined); // undefined=loading, null=signed out
+  const [linkType, setLinkType] = useState(null);
+  const [me, setMe] = useState(null);
+  const [apps, setApps] = useState([]);
+  const [tab, setTab] = useState("home");
+  const [toast, setToast] = useState("");
+
+  const flash = (text, isErr) => { setToast((isErr ? "⚠ " : "") + text); setTimeout(() => setToast(""), 4000); };
+
+  useEffect(() => {
+    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    if (h.get("type") === "invite" || h.get("type") === "recovery") setLinkType(h.get("type"));
+    sb.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = sb.auth.onAuthStateChange((event, s) => {
+      if (event === "PASSWORD_RECOVERY") setLinkType("recovery");
+      if (event === "SIGNED_OUT") { setLinkType(null); setMe(null); setApps([]); }
+      setSession(s);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const loadMe = useCallback(async (s) => {
+    const { data: m } = await sb.from("members").select("*").eq("user_id", s.user.id).maybeSingle();
+    setMe(m);
+    if (m && !m.is_disabled) {
+      try { const r = await call("my_apps"); setApps(r.apps); } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (session && linkType !== "invite" && linkType !== "recovery") loadMe(session);
+  }, [session, linkType, loadMe]);
+
+  if (!CONFIGURED) return <NotConfigured />;
+  if (session === undefined) return <div className="center-wrap" />;
+  if (!session) return <LoginScreen />;
+  if (linkType === "invite" || linkType === "recovery") {
+    return <SetPasswordScreen onDone={() => { history.replaceState(null, "", "/"); setLinkType(null); loadMe(session); }} />;
+  }
+  if (!me) return <div className="center-wrap" />;
+  if (me.is_disabled) {
+    return (
+      <div className="center-wrap">
+        <div className="card login-card">
+          <p>Your access has been disabled. Contact your administrator.</p>
+          <button className="btn" onClick={() => sb.auth.signOut()}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <TopBar me={me} onLogout={() => sb.auth.signOut()} />
+      <div className="wrap">
+        {me.role === "admin" && (
+          <nav className="tabs">
+            <button className={tab === "home" ? "active" : ""} onClick={() => setTab("home")}>Your apps</button>
+            <button className={tab === "manage" ? "active" : ""} onClick={() => setTab("manage")}>Manage</button>
+          </nav>
+        )}
+        {tab === "home" || me.role !== "admin" ? <Dashboard apps={apps} /> : <Manage me={me} flash={flash} />}
+      </div>
+      <Toast text={toast} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
