@@ -36,9 +36,10 @@ This is the same pattern you already used for Antar Family Archive.
 4. Before the first deploy finishes mattering, go to **Site configuration → Environment variables** and add:
    - `SUPABASE_URL` — the same Project URL as above
    - `SUPABASE_ANON_KEY` — the same anon public key as above
-   - `SUPABASE_SERVICE_ROLE_KEY` — the **service_role** key from Supabase (Project Settings → API) — keep this one private, it's what lets the hub invite and manage people
-   - `BOOTSTRAP_ADMIN_EMAIL` — your own email address (`david@aplusview.com`), so you're the one allowed to set up the first admin account
+   - `SUPABASE_SERVICE_ROLE_KEY` — the **service_role** key from Supabase (Project Settings → API) — keep this one private, it's what lets the hub invite and manage people. Make sure the name has `_KEY` on the end, exactly as written here — a name like `SUPABASE_SERVICE_ROLE` (missing `_KEY`) won't be found by the code and invites/admin actions will quietly fail.
+   - `BOOTSTRAP_ADMIN_EMAIL` — your own email address, so you're the one allowed to set up the first admin account
    - `APP_URL` — the Netlify site's URL once you know it (e.g. `https://launch-hub.netlify.app`) — you can add this after the first deploy
+   - `SECRETS_SCAN_OMIT_KEYS` — set this to `SUPABASE_ANON_KEY,SUPABASE_URL,BOOTSTRAP_ADMIN_EMAIL` (Netlify's secret scanner otherwise blocks the deploy whenever it finds those values anywhere in the repo — which is expected and fine here, the same way you handled this for Antar Family Archive)
 5. Redeploy the site (Netlify → Deploys → Trigger deploy) so it picks up those variables.
 
 ## 5. First sign-in
@@ -49,3 +50,5 @@ This is the same pattern you already used for Antar Family Archive.
 4. Go to **Manage → People** to invite anyone else (Rosanne, etc.) and tick which apps each person can see.
 
 Everyone signs in here to get to the tile page, then clicks through to whichever app — each app still has its own separate login the first time you visit it there, same as it always has.
+
+
